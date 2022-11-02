@@ -29,6 +29,9 @@ const config: webpack.Configuration = {
             "buffer": require.resolve("buffer"),
             "stream": false,
         },
+        alias: {
+          'crypto-browserify$': path.resolve(__dirname, 'src/utils/uuidProxy.ts')
+        },
         extensions: ['.tsx', '.ts', '.js'],
     },
     module: {
@@ -40,6 +43,14 @@ const config: webpack.Configuration = {
             }
         ],
     },
+    optimization: {
+        concatenateModules: true,
+        splitChunks: {
+            minChunks: 2,
+            chunks: 'all',
+            minSize: 0
+        }
+    }
 };
 
 export default config;
