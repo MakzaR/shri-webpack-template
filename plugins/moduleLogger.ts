@@ -27,28 +27,33 @@ class ModuleLogger {
     }
 
     async readModules(path: string) {
-        let modules: string[] = [];
-        let excluded = false;
-        const modulesInDirectory = await readdir(path, {withFileTypes: true});
+        try {
+            let modules: string[] = [];
+            let excluded = false;
 
-        for (const module of modulesInDirectory) {
-            const modulePath = `${path}/${module.name}`
+            const modulesInDirectory = await readdir(path, {withFileTypes: true});
 
-            excluded =this.options.whiteList.some((regexp) => regexp.test(modulePath));
+            for (const module of modulesInDirectory) {
+                const modulePath = `${path}/${module.name}`
 
-            if (!excluded) {
-                if (module.isDirectory()) {
-                    modules = [
-                        ...modules,
-                        ...(await this.readModules(modulePath))
-                    ];
-                } else {
-                    modules.push(modulePath);
+                excluded =this.options.whiteList.some((regexp) => regexp.test(modulePath));
+
+                if (!excluded) {
+                    if (module.isDirectory()) {
+                        modules = [
+                            ...modules,
+                            ...(await this.readModules(modulePath))
+                        ];
+                    } else {
+                        modules.push(modulePath);
+                    }
                 }
             }
-        }
 
-        return modules;
+            return modules;
+        } catch (error) {
+            throw new Error(`Unable to read directory: ${error}`);
+        }
     }
 
     writeModules() {

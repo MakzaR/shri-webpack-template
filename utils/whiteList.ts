@@ -1,12 +1,13 @@
 export const whiteList = [
     /.*node_modules.*/,
     /.*plugins.*/,
-    /.*utils.*/,
+    /.*dist.*/,
     /\.git.*$/,
     /\.json$/,
     /\.nvmrc$/,
-    /\.yaml$/,
-    /\.md$/,
     /\.config\.[tj]s$/,
-    /index\.html$/
+    /\.prettierrc\.yaml$/,
+    /README\.md$/,
+    /index\.html$/,
+    /.*utils\/whiteList.ts/
 ]
