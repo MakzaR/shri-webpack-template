@@ -1,7 +1,6 @@
 export const whiteList = [
     /.*node_modules.*/,
     /.*plugins.*/,
-    /.*dist.*/,
     /\.git.*$/,
     /\.json$/,
     /\.nvmrc$/,

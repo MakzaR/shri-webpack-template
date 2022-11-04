@@ -7,7 +7,6 @@ interface Options {
     directory?: string,
     output?: string,
     whiteList?: RegExp[],
-    pattern?: string
 }
 
 class ModuleLogger {
@@ -17,7 +16,6 @@ class ModuleLogger {
         directory: '',
         output: 'unused.json',
         whiteList: [],
-        pattern: ''
     }
 
     private unusedModules: string[];
@@ -52,7 +50,7 @@ class ModuleLogger {
 
             return modules;
         } catch (error) {
-            throw new Error(`Unable to read directory: ${error}`);
+            throw new Error(`Unable to read directory: ${error.message}`);
         }
     }
 
@@ -63,7 +61,7 @@ class ModuleLogger {
     apply(compiler: Compiler) {
         const pluginName = ModuleLogger.name;
 
-        compiler.hooks.afterEmit.tapPromise(pluginName, async (compilation) => {
+        compiler.hooks.emit.tapPromise(pluginName, async (compilation) => {
             const usedModules = compilation.fileDependencies;
             const root = compiler.context;
 
