@@ -4,6 +4,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 import StatoscopePlugin from '@statoscope/webpack-plugin';
 
 import ModuleLogger from './plugins/moduleLogger';
+import {whiteList} from "./utils/whiteList";
 
 const config: webpack.Configuration = {
     mode: 'production',
@@ -17,7 +18,9 @@ const config: webpack.Configuration = {
     },
     plugins: [
         new HtmlWebpackPlugin(),
-        new ModuleLogger(),
+        new ModuleLogger({
+            whiteList: whiteList
+        }),
         new StatoscopePlugin({
             saveStatsTo: 'stats.json',
             saveOnlyStats: false,
@@ -26,8 +29,8 @@ const config: webpack.Configuration = {
     ],
     resolve: {
         fallback: {
-            "buffer": require.resolve("buffer"),
-            "stream": false,
+            'buffer': require.resolve('buffer'),
+            'stream': false,
         },
         alias: {
           'crypto-browserify$': path.resolve(__dirname, 'src/utils/uuidProxy.ts')

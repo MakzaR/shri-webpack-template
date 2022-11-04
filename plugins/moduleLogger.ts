@@ -1,55 +1,78 @@
-import { Compiler } from 'webpack';
-import fg from 'fast-glob';
+import {Compiler} from 'webpack';
 import {writeFileSync} from "fs";
-import {writeFile} from "fs/promises";
-import { join } from 'path';
-import {assignWith} from "lodash";
+import {join} from 'path';
+import {readdir} from "fs/promises";
 
 interface Options {
-    root?: string,
+    directory?: string,
     output?: string,
-    blackList?: string[],
+    whiteList?: RegExp[],
     pattern?: string
 }
 
 class ModuleLogger {
     private options: Options;
 
-    private unusedModules: string[] = [];
-
     static defaultOptions: Options = {
-        // blackList: ['**/node_modules/**', '**/index.html'],
-        root: '',
+        directory: '',
         output: 'unused.json',
-        blackList: [],
-        pattern: '**'
+        whiteList: [],
+        pattern: ''
     }
+
+    private unusedModules: string[];
 
     constructor(options?: Options) {
         this.options = {...ModuleLogger.defaultOptions, ...options};
     }
 
-    async getModules(contextPath: string, root: string, pattern: string) {
-        const path = join(contextPath, root, pattern);
-        return fg(path, {
-            ignore: this.options.blackList
-        });
+    async readModules(path: string) {
+        let modules: string[] = [];
+        let excluded = false;
+        const modulesInDirectory = await readdir(path, {withFileTypes: true});
+
+        for (const module of modulesInDirectory) {
+            const modulePath = `${path}/${module.name}`
+
+            excluded =this.options.whiteList.some((regexp) => regexp.test(modulePath));
+
+            if (!excluded) {
+                if (module.isDirectory()) {
+                    modules = [
+                        ...modules,
+                        ...(await this.readModules(modulePath))
+                    ];
+                } else {
+                    modules.push(modulePath);
+                }
+            }
+        }
+
+        return modules;
+    }
+
+    writeModules() {
+        writeFileSync(this.options.output, JSON.stringify(this.unusedModules));
     }
 
     apply(compiler: Compiler) {
         const pluginName = ModuleLogger.name;
 
-        compiler.hooks.afterEmit.tap(pluginName, async (compilation) => {
+        compiler.hooks.afterEmit.tapPromise(pluginName, async (compilation) => {
             const usedModules = compilation.fileDependencies;
-            const contextPath = compiler.context;
+            const root = compiler.context;
 
-            const modules = await this.getModules(contextPath, this.options.root, this.options.pattern);
+            const initialPath = join(root, this.options.directory);
+
+            const modules = await this.readModules(initialPath);
             const usedModulesSet = new Set(Array.from(usedModules));
 
-            const unusedModules = modules.filter((module) => !usedModulesSet.has(module));
-
-            writeFileSync(this.options.output, JSON.stringify(unusedModules));
+            this.unusedModules = modules.filter((module) => !usedModulesSet.has(module));
         });
+
+        compiler.hooks.done.tap(pluginName, () => {
+            this.writeModules();
+        })
     }
 }
 
